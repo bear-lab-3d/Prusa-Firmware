@@ -1,0 +1,70 @@
+kind: pipeline
+name: default
+
+workspace:
+  path: Prusa-Firmware
+
+steps:
+  - name: tests
+    image: vertigo235/fw-build
+    commands:
+      - bash -x test.sh
+    when:
+      event: 
+        - push
+        - tag
+        - pull_request
+  
+  - name: build-a-bear
+    image: vertigo235/fw-build
+    environment:
+      BUILD_TYPE: GOLD
+    commands:
+      - chmod +x PF-build.sh
+      - chmod +x lang/config.sh
+      - chmod +x lang/fw-clean.sh
+      - chmod +x lang/lang-clean.sh
+      - sed -i -e 's/#define FW_COMMIT_NR   [0-9]*/#define FW_COMMIT_NR  '"$DRONE_BUILD_STARTED"'/' Firmware/Configuration.h
+      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK3S"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK3S BEAR"/' Firmware/variants/1_75mm_MK3S-EINSy10a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK3S-EINSy10a.h
+      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5S BEAR"/' Firmware/variants/1_75mm_MK25S-RAMBo10a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK25S-RAMBo10a.h
+      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5S BEAR"/' Firmware/variants/1_75mm_MK25S-RAMBo13a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK25S-RAMBo13a.h
+      - bash -x PF-build.sh Bear_Cal_FW_MK3S-EINSy10a.h ALL $BUILD_TYPE
+      - bash -x PF-build.sh Bear_Cal_FW_MK25S-RAMBo10a.h ALL $BUILD_TYPE
+      - bash -x PF-build.sh Bear_Cal_FW_MK25S-RAMBo13a.h ALL $BUILD_TYPE
+    when:
+      event:
+       - push
+       - tag
+       - pull_request
+  
+  - name: prepare-hex
+    image: vertigo235/fw-build
+    commands:
+      - cd $CI_WORKSPACE
+      - mkdir out
+      - cd $DRONE_WORKSPACE_BASE/Hex-files
+      - mv `find -name "*.zip"` $CI_WORKSPACE/out
+      - mv `find -name "*.hex"` $CI_WORKSPACE/out
+      - cd $CI_WORKSPACE/out
+      - unzip \*.zip
+      - rm *.zip
+      - cd $CI_WORKSPACE
+      - bash rename_and_zip.sh
+    when:
+      event:
+       - tag
+       - push
+
+  - name: publish
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github-token
+      prerelease: true
+      draft: true    
+      checksum: md5
+      files: 
+        - out/*.*
+    when:
+      event: 
+        - tag
