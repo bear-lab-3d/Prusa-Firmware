@@ -42,7 +42,7 @@ steps:
     commands:
       - cd $CI_WORKSPACE
       - mkdir out
-      - cd $DRONE_WORKSPACE_BASE/Hex-files
+      - cd $DRONE_WORKSPACE_BASE/PF-build-hex
       - mv `find -name "*.zip"` $CI_WORKSPACE/out
       - mv `find -name "*.hex"` $CI_WORKSPACE/out
       - cd $CI_WORKSPACE/out
