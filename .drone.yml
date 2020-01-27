@@ -40,15 +40,15 @@ steps:
   - name: prepare-hex
     image: vertigo235/fw-build
     commands:
-      - cd $CI_WORKSPACE
+      - cd $DRONE_WORKSPACE
       - mkdir out
       - cd $DRONE_WORKSPACE_BASE/PF-build-hex
-      - mv `find -name "*.zip"` $CI_WORKSPACE/out
-      - mv `find -name "*.hex"` $CI_WORKSPACE/out
-      - cd $CI_WORKSPACE/out
+      - mv `find -name "*.zip"` $DRONE_WORKSPACE/out
+      - mv `find -name "*.hex"` $DRONE_WORKSPACE/out
+      - cd $DRONE_WORKSPACE/out
       - unzip \*.zip
       - rm *.zip
-      - cd $CI_WORKSPACE
+      - cd $DRONE_WORKSPACE
       - bash rename_and_zip.sh
     when:
       event:
