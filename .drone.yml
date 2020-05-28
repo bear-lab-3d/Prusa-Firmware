@@ -25,12 +25,12 @@ steps:
       - chmod +x lang/fw-clean.sh
       - chmod +x lang/lang-clean.sh
       - sed -i -e 's/#define FW_COMMIT_NR   [0-9]*/#define FW_COMMIT_NR  '"$DRONE_BUILD_STARTED"'/' Firmware/Configuration.h
-      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK3S"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK3S BEAR"/' Firmware/variants/1_75mm_MK3S-EINSy10a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK3S-EINSy10a.h
-      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5S BEAR"/' Firmware/variants/1_75mm_MK25S-RAMBo10a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK25S-RAMBo10a.h
-      - sed 's/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5"/#define CUSTOM_MENDEL_NAME "Prusa i3 MK2.5S BEAR"/' Firmware/variants/1_75mm_MK25S-RAMBo13a-E3Dv6full.h > Firmware/variants/Bear_Cal_FW_MK25S-RAMBo13a.h
       - bash -x PF-build.sh Bear_Cal_FW_MK3S-EINSy10a.h ALL $BUILD_TYPE
       - bash -x PF-build.sh Bear_Cal_FW_MK25S-RAMBo10a.h ALL $BUILD_TYPE
       - bash -x PF-build.sh Bear_Cal_FW_MK25S-RAMBo13a.h ALL $BUILD_TYPE
+      - bash -x PF-build.sh Bear_Cal_FW_MK3S_Hemera-EINSy10a.h ALL $BUILD_TYPE
+      - bash -x PF-build.sh Bear_Cal_FW_MK25S_Hemera-RAMBo13a.h ALL $BUILD_TYPE
+      - bash -x PF-build.sh Bear_Cal_FW_MK25S_Hemera-RAMBo10a.h ALL $BUILD_TYPE
     when:
       event:
        - push
@@ -42,6 +42,7 @@ steps:
     commands:
       - cd $DRONE_WORKSPACE
       - mkdir out
+      - mkdir fileshare
       - cd $DRONE_WORKSPACE_BASE/PF-build-hex
       - mv `find -name "*.zip"` $DRONE_WORKSPACE/out
       - mv `find -name "*.hex"` $DRONE_WORKSPACE/out
@@ -50,10 +51,29 @@ steps:
       - rm *.zip
       - cd $DRONE_WORKSPACE
       - bash rename_and_zip.sh
+      - cd $DRONE_WORKSPACE/fileshare
+      - zip -q -j bearcal_fw_$(git rev-parse --short HEAD).zip $DRONE_WORKSPACE/out/*.*
+    depends_on:
+      - build-a-bear    
     when:
       event:
        - tag
        - push
+    
+  - name: fileio
+    image: vertigo235/fw-build:1
+    failure: ignore
+    commands:
+      - cd $DRONE_WORKSPACE/fileshare
+      - curl -F "file=@bearcal_fw_$(git rev-parse --short HEAD).zip" https://file.io
+      - echo
+    when:
+      event:
+      - push
+      - tag
+      - pull_request
+    depends_on:
+      - prepare-hex
 
   - name: publish
     image: plugins/github-release
