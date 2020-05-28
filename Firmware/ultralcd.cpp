@@ -6381,16 +6381,28 @@ void unload_filament()
 
 	//		extr_unload2();
 
-	current_position[E_AXIS] -= 45;
-	plan_buffer_line_curposXYZE(5200 / 60, active_extruder);
-	st_synchronize();
-	current_position[E_AXIS] -= 15;
-	plan_buffer_line_curposXYZE(1000 / 60, active_extruder);
-	st_synchronize();
-	current_position[E_AXIS] -= 20;
-	plan_buffer_line_curposXYZE(1000 / 60, active_extruder);
-	st_synchronize();
-
+	#ifdef BEAR_HEMERA
+		current_position[E_AXIS] -= 15;
+		plan_buffer_line_curposXYZE(4000 / 60, active_extruder);
+		st_synchronize();
+		current_position[E_AXIS] += 1;
+		plan_buffer_line_curposXYZE(20 / 60, active_extruder);
+		st_synchronize();
+		current_position[E_AXIS] -= 40;
+		plan_buffer_line_curposXYZE(1000 / 60, active_extruder);
+		st_synchronize();
+	#else
+		current_position[E_AXIS] -= 45;
+		plan_buffer_line_curposXYZE(5200 / 60, active_extruder);
+		st_synchronize();
+		current_position[E_AXIS] -= 15;
+		plan_buffer_line_curposXYZE(1000 / 60, active_extruder);
+		st_synchronize();
+		current_position[E_AXIS] -= 20;
+		plan_buffer_line_curposXYZE(1000 / 60, active_extruder);
+		st_synchronize();
+	#endif 
+	
 	lcd_display_message_fullscreen_P(_T(MSG_PULL_OUT_FILAMENT));
 
 	//disable extruder steppers so filament can be removed
